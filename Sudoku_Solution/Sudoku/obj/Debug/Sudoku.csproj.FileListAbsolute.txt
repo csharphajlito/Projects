@@ -1,7 +1,0 @@
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\obj\Debug\Sudoku.csprojAssemblyReference.cache
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\obj\Debug\Sudoku.csproj.CoreCompileInputs.cache
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\bin\Debug\02.14_Sudoku.exe.config
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\bin\Debug\02.14_Sudoku.exe
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\bin\Debug\02.14_Sudoku.pdb
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\obj\Debug\02.14_Sudoku.exe
-C:\Users\Stier Máté\source\repos\Sudoku_Solution\Sudoku\obj\Debug\02.14_Sudoku.pdb
