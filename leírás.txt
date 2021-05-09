@@ -1,0 +1,193 @@
+Terv:
+	Egy Windows form app amin megjelenik egy sakktábla egy húszár figurával és a húszár végig lép a sakktábla minden egyes mezőjén véletlen sorrendben és
+	kétszer ugyanoda nem lép. Többféle sakktábla is létezzen.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+Megvalósítás:
+	Brute force módszert alkalmazok. Minden lehetőségen végig lép az algoritmus. Első lépésként megnézi, hogy a jelenlegi helyzethez képest van e lépés,
+	ha van lép, ha nincs akkor lép egyet vissza és megjegyzi az útvonalat. A lépéshez felhasználtam eseményeket, visszalépéshez meg
+	Dictonary<List<int>,List<int>> adatszerkezetett. A szótár kulcsa a jelenlegi útvonalunk kivéve az utolsó elem, értéke pedig az a bizonyos 
+	utolsó elem. Például ha van egy ilyen lista (Path=List<int> { 1, 8, 28, 11 }) ami a jelenlegi útvonal akkor:	Key=List<int> { 1, 8, 28 } 
+															Value =List<int> { 11 }
+												Ami azt jelenti, hogy 1, 8, 28 a 11 nem következhet.
+
+	És kezdődik előről. 	Van valid lépés?	--> ha van akkor előre
+							--> egyébként hátra
+				Van valid lépés? És  így tovább... 
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+Osztályok és a jellemzésük:
+
+	Field osztály
+		Egy sakktábla mezőt ábrázol egy Field példány és az adattagjai segítségével beazonósítható a sakktábla mező. 
+		(0-tól van indexelve. RowIndex = 4 , akkor az az ötödik sort jelenti)
+	
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	Step osztály
+ 		A GetEnumerator() metódus segítségével elérhető az összes lépés. Minden egyes Step példány véletlen
+		sorrendben tartalmazza a húszár lépéseket. A húszár lépéseket a Pair beágyazott osztály reprezentálja. X tulajdonság sor eltolást, y 
+		tulajdonság pedig oszlop eltolást jelenti.	
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Route osztály
+		Az osztály biztosít számunkra egy lista adatszerkezetett, ami a huszár figura eddigi lépéseit tartalmazza. GetPath tulajdonsággal érjük el a 
+		listánkat, void Add(int num) fg segítségével a lista végéhez fűzhetünk egy int számot.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Initializer osztály
+		Ez egy abstract ősosztály. Belőle származtatom a sakktáblákat. Ő előírja a sakktábla tulajdonságait. Bővíthetőségre lehetőséget ad.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	MoveForward osztály
+		Feladata az előre lépés dokumentálása. Az új aktuális pozíció beállítása, új RowIndex, új ColumnIndex és a Path-et és ő fogja frissiteni.
+		Publikus esemény segítségével oldja meg. Az eseményhez tartotó információkat egy ForwardEventArgs példánytól kapja.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	ForwardEventArgs osztály
+		Aktuális Path adom át vele.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	BacktrackLogger osztály
+		Ő kezeli a visszalépést és loggolja a rossz útvonalakat a szótárban. Két feladatra két esemény van. A Backtrack a logg-ot intézi, a SetPath
+		nevű pedig az indexek frissen tartásáért felelős. Ha már létezik egy útvonalon egy rossz irány, akkor a megfelelő listához hozzáfűzi a jelenlegi
+		rossz irányt. Az visszalépés információkat a StepBackEventArgs tartalmazza.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	ListValuesEqualityComparer osztály
+		IEqualityComparer<List<int>> interface megvalósító osztály. Példányaival összetudjuk hasonlítani a List<int> gyűjteményeket. Backtrack-ek
+		loggjainál a BacktrackLogger osztályban van felhasználva.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	CalculatorIndexes osztály
+		A megoldás során az indexeket itt tárolom.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Calculator osztály
+		Egy sakktábla megoldását tartalmazza. Tartalmazza a komponenseket és a komponensek szolgáltatásai segítségével számolja ki az útvonalat.
+		Minden egyes előre lépésnél és vissza lépésnél változnak a tulajdonságai. Solve() metódusa oldja meg a feladatot.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	StepService és ValidStepCalculator
+		Lényegében ők oldják meg a problémát publikus függvényein keresztül. Calculator osztály tartalmaz egy StepService objektet. 
+		StepService pedig egy ValidStepCalculatort.
+			
+		StepService szolgáltatásai: 
+			- int getTargetIndex(int x, int y), az x a sorszámot az y az oszlop számot jelenti ha a lépésünk nem vezet ki a sakktáblán kivülre
+			akkor vissza adja a megfelelő indexet, egyébként pedig -1.
+			- bool isInRange(int[] currentFieldIndexes,int tempTargetIndex), currentFieldIndexes vektor tartalmazza az aktuális sakktábla mezőket.
+			mivel egyéni sakktáblák vannak, ezért meg kell jegyeztetni, hogy éppen mire is léphetek. A tempTargetIndex pedig az az index amit 
+			probálgatok, hogy benne van e az aktuális mezőkben. Ha benne van igaz, máskülönben hamis értéket ad vissza.
+			- bool isInPath(int tempTargetIndex,List<int> path), a tempTargetIndex az az index amit probálgatok, hogy benne van a az 
+			aktuális útvonalunkban. A path pedig az aktuális útvonalunk. Ez a metódus megmondja, hogy a tempTargetIndex, amire rá akar lépni, benne
+			van e az útvonalunkban.
+			- bool isLogged(IBacktrackLogger _logger,int tempTargetIndex, List<int> path), Ez a függvény megmondja, hogy a jelenlegi path-en rajta 
+			van e a tempTargetIndex és loggolva van e az temptargetIndex a paraméterként megadott path-el.
+			- void steping(ICalculatorIndexes _indexes, int[] currentFieldIndexes, List<int> path, IBacktrackLogger _logger, MoveForward move, 
+			Calculator calculator) lényegében csak egy útvonal választás, hogy előre vagy hátra. Függvényen belül invokoljuk az előre illetve hátra
+			eseményeket és ezért kell ilyen sok paraméter.
+		ValidStepCalculator szolgáltatása:
+			- bool haveValidStep(ICalculatorIndexes _indexes, int[] currentFieldIndexes, List<int> path, IBacktrackLogger _logger, 
+			IStepService _service, out List<int> validSteps), megnézi, hogy van e jó lépés, ha van igazat ad vissza és out módosító segítségével
+			kapjuk meg egy listában a jó lépéseket.
+			Ahhoz, hogy megtudjuk, hogy van e jó lépés a következő információkra van szükség: 	
+									-indexek //Hol állunk?
+									-milyen indexekből gazdálkodhatok // currentFieldIndexes tartalamzza
+									-jelenlegi útvonal // kétszer nem léphetünk ugyan oda
+									-rossz útvonalak // _loggerben található
+			Ezeket az információkat felhasználva a _service példány szolgáltatásaival megtudjuk mondani, hogy melyik lépés helyes és melyik nem.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	MoveEffect osztály:
+		Táblán lévő huszár mozgatásáért felelős. Felhasználja az EffectCalculator osztály illetve a FakeTimer osztályt
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	EffectCalculator osztály:
+		Publikus példány szintű metódusai segítségével egy pozicíó alapján meg lehet mondani, hogy milyen az indexe 
+		*int[] getRowAndColumnIndex(int position)*, illetve, hogy egy adott szélleséghez vagy magassághoz hány pixelre van szükség 
+		*int getPositionInPixels(int coordinate,int fieldSize). 
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	FakeTimer osztály:
+		Egy timer működését utánozza le, segítségével mozgatomom a formon a huszár figurát.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+Unit tesztek:
+		BacktrackLoggerTests:
+			-Első teszt ellenőrzi, hogy az invokeBacktrack kiváltja e a Backtrackt eseményt.
+         		-Második teszt ellenőrzi, hogy egy új loggot helyesen tárol e az osztály.
+         		-Harmadik teszt ellenőrzi, hogy ha van két ugyanolyan kulcsú logg akkor helyesen tárolja e. 
+            			Helyes tárolás módja, hogy a már meglévő kulcs értékéhez fűzi hozzá a rossz útvonal indexét.
+         		-Negyedik teszt ellenőrzi, hogy a különböző kulcsú párokat külön esetben tárolja e el.
+         		-Ötödik teszt ellenőrzi, hogy az indexeket frissítő event kiváltódik e.
+         		-Hatodik teszt ellenőrzi, hogy jó értékeket kaptak e firssítés után. 
+            			Helyes értékek:
+                			-aktuális hely   = az éppen most loggolt path utolsó elötti elem értékével.
+                			-aktuális sor    = az aktuális hely osztva 8-al.
+                			-aktuális oszlop = az aktuális hely maradékos osztás 8-al.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+		ListValueEqualityComperorTests: 	//két lista akkor egyenlő, ha pontosan ugyanazokat az inteket, ugyanabban a sorrendben tartalmazza.
+			-Első teszt ellenőrzi, hogy ha mindkét lista null, akkor egyenlő e.
+        		-Második teszt ellenőrzi, hogy ha egyik lista  null a másik meg egy inicializált, akkor egyenlő e.
+         		-Harmadik teszt ellenőrzi, hogy a különböző hosszúságú listák egyenlőek e.
+         		-Negyedik teszt ellenőrzi, hogy ugyanolyan hosszúságú, de más számokkal rendelkező lista ugyanaz e.
+         		-Ötödik teszt ellenőrzi, hogy két ugyanolyan listánál igazat ad e vissza.
+	
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	MoveForwardTests:
+		-Az első teszt ellenőrzi, hogy a StepForward esemény kiváltódik e.
+        	-Második teszt ellenőrzi, hogy jó értékeket állítódnak e be.
+                	Helyes értékek:
+                		-aktuális hely   = az éppen most loggolt path utolsó elötti elem értékével.
+                		-aktuális sor    = az aktuális hely osztva 8-al.
+                		-aktuális oszlop = az aktuális hely maradékos osztás 8-al.
+         			-útvonal 	 = jelenlegi útvonal plusz a végére fűzve az aktuális hely.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+
+	StepServiceTests:
+		-getTargetIndex:
+         	  -Az első kettő tesztel a jó eseteket ellenőrzőm.
+         	  -Második három tesztnél a túl kicsi indexeket ellenőrzőm.
+        	  -Harmadik három tesztnél a túl nagy indexeket ellenőrzőm.
+        	
+        	-isInRange:
+         	  -első négynél tesztnél azt ellenőrzőm, hogy benne van e.
+         	  
+         	-isInPath:
+         	  -első négynél tesztnél azt ellenőrzőm, hogy benne van e.
+           
+         	-isLogged:
+         	  -első tesztnél azt ellenőrzőm, hogy egy nem loggolt kulcsnál mit add vissza.
+         	  -második tesztnél azt ellenőrzőm, hogy loggolt kulcsnál mit add vissza. (más érték esetében)
+         	  -harmadik tesztnél azt ellenőrzőm, hogy loggolt kulcsnál mit add vissza (egyező érték esetében)
+           
+         	-stepping:
+         	  -első tesztnél azt ellenőrzőm, hogyha haveValidStep hamisat add vissza akkor kiváltódik e a Backtrack esemény.
+         	  -második tesztnél azt ellenőrzőm, hogyha haveValidStep igazat add vissza akkor kiváltódik e a StepForward esemény.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	ValidStepCalculatorTests:
+		Egyenként elszeparálva egymástól a függvények műkődnek és ebben a két példában konkrét esetett ellenerzők.
+	-------------------------------------------------------------------------------------------------------------------------------------------------
+         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
